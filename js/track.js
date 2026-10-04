@@ -282,12 +282,11 @@ function drawTrackMap(g, t, w, h, pad){
   chunks.sort((a, b) => a.h - b.h);
   const col = '#' + new THREE.Color(t.theme.road).getHexString(), hi = t.theme.neon ? '#ff5a7a' : col;
   g.clearRect(0, 0, w, h); g.lineJoin = 'round'; g.lineCap = 'round';
-  for (const c of chunks) {
-    g.beginPath();
-    for (let k = 0; k <= CH; k++) { const q = t.P[(c.i + k) % N], [x, y] = f(q.x, q.z); k ? g.lineTo(x, y) : g.moveTo(x, y); }
-    g.strokeStyle = '#000b'; g.lineWidth = 11; g.stroke();
-    g.strokeStyle = c.h > 2 ? hi : col; g.lineWidth = 6; g.stroke();
-    if (c.h > 2) { g.strokeStyle = '#ffffff55'; g.lineWidth = 2; g.stroke(); }
+  const seg = c => { g.beginPath(); for (let k = 0; k <= CH; k++) { const q = t.P[(c.i + k) % N], [x, y] = f(q.x, q.z); k ? g.lineTo(x, y) : g.moveTo(x, y); } };
+  // ground level first, then raised track on top; outline pass then colour pass so the line stays solid
+  for (const level of [chunks.filter(c => c.h <= 2), chunks.filter(c => c.h > 2)]) {
+    for (const c of level) { seg(c); g.strokeStyle = '#000'; g.lineWidth = 11; g.stroke(); }
+    for (const c of level) { seg(c); g.strokeStyle = c.h > 2 ? hi : col; g.lineWidth = 6; g.stroke(); if (c.h > 2) { g.strokeStyle = '#ffffff55'; g.lineWidth = 2; g.stroke(); } }
   }
   const [sx, sy] = f(t.P[0].x, t.P[0].z), n = t.Nr[0];
   g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); g.moveTo(sx - n.x * 7, sy - n.z * 7); g.lineTo(sx + n.x * 7, sy + n.z * 7); g.stroke();
