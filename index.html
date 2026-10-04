@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Toy Room Racers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=7">
+</head>
+<body>
+<div id="loading"><div class="ld-title">Toy Room Racers</div><div class="ld-sub">Tidying the room…</div></div>
+
+<!-- RACE HUD -->
+<div id="hud" class="hidden">
+  <div id="warpFX"></div>
+  <div id="hudTL">
+    <div id="hPos"><span id="hPosN">4</span><small id="hPosOf">/4</small></div>
+    <div id="hLap">LAP 1/3</div>
+    <div id="hTime">0:00.00</div>
+    <ol id="board"></ol>
+  </div>
+  <canvas id="mini" width="190" height="190"></canvas>
+  <div id="hudBL">
+    <div id="hCoins">🪙 +0</div>
+    <div class="nitroWrap"><span>NITRO</span><div id="nitroBar"><div id="nitroFill"></div></div></div>
+  </div>
+  <canvas id="tacho" width="250" height="250"></canvas>
+  <div id="center"></div>
+  <div id="wrong" class="hidden">WRONG WAY</div>
+  <div id="keysHint">Esc pause · C camera · M sound · R reset</div>
+</div>
+
+<!-- MENU -->
+<div id="menu" class="hidden">
+  <div id="panel">
+    <header><h1>Toy Room Racers</h1><div class="hdrR"><span id="creatorBadge" class="hidden" title="Creator Mode: all cars, tiers and upgrades unlocked on this PC">🛠 CREATOR</span><div id="bank"></div></div></header>
+    <nav id="tabs">
+      <button data-tab="career" class="tab on">🏁 Career</button>
+      <button data-tab="garage" class="tab">🔧 Garage</button>
+      <button data-tab="rush" class="tab">🪙 Coin Rush</button>
+      <button data-tab="settings" class="tab tabIcon" title="Settings">⚙️</button>
+    </nav>
+    <section id="tab-career"></section>
+    <section id="tab-garage" class="hidden"></section>
+    <section id="tab-rush" class="hidden"></section>
+    <section id="tab-settings" class="hidden"></section>
+  </div>
+  <div id="showCtl">
+    <div id="showName"></div>
+    <div class="showBtns">
+      <button id="revBtn" class="alt">🔊 Hold to rev</button>
+    </div>
+    <div class="showHint">Drag to spin the car · Scroll to zoom</div>
+  </div>
+</div>
+
+<div id="pause" class="overlay hidden">
+  <div class="box small">
+    <h2>Paused</h2>
+    <button id="pResume">Resume</button>
+    <button id="pRestart" class="alt">Restart</button>
+    <button id="pQuit" class="alt">Quit to menu</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="results" class="overlay hidden"><div class="box small" id="resBox"></div></div>
+
+<script type="importmap">
+{"imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+// Modern three.js (r160) with post-processing, then the game scripts in order.
+import * as T from 'three';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+window.THREE = Object.assign({}, T, {EffectComposer, RenderPass, OutputPass, UnrealBloomPass, GTAOPass, RoomEnvironment, BufferGeometryUtils});
+const V = 21;
+for (const f of ['data', 'core', 'room', 'track', 'cars', 'models1', 'models2', 'audio', 'game', 'ui']) {
+  await new Promise((ok, fail) => { const s = document.createElement('script'); s.src = `js/${f}.js?v=${V}`; s.onload = ok; s.onerror = fail; document.body.appendChild(s); });
+}
+</script>
+<script>
+// If the 3D engine can't download (offline), say so instead of showing a blank screen.
+setTimeout(() => { if (!window.THREE) document.querySelector('.ld-sub').textContent = 'Could not load the 3D engine — check your internet connection and refresh.'; }, 12000);
+</script>
+</body>
+</html>
