@@ -55,14 +55,27 @@ function nearestIdx(t, x, z, guess, win = 30){
   return best;
 }
 // Road surface height at a (fractional) sample index — hills, bridges and the book ramp.
+function baseGround(t, fidx){
+  const N = t.N, f = ((fidx % N) + N) % N, i0 = Math.floor(f) % N, i1 = (i0 + 1) % N, fr = f - Math.floor(f);
+  return TRACK_Y + t.H[i0] + (t.H[i1] - t.H[i0]) * fr;
+}
+// How far along the book ramp this point is (0..rampLen), or -1 when not on it.
+function rampPos(t, fidx, lat){
+  if (t.ramp0 == null || Math.abs(lat) > t.hw - 0.2) return -1;
+  const k = ((fidx - t.ramp0) % t.N + t.N) % t.N;
+  return k < t.rampLen ? k : -1;
+}
 function groundAt(t, fidx, lat){
   if (!t) return 0;
-  const N = t.N, f = ((fidx % N) + N) % N, i0 = Math.floor(f) % N, i1 = (i0 + 1) % N, fr = f - Math.floor(f);
-  let g = TRACK_Y + t.H[i0] + (t.H[i1] - t.H[i0]) * fr;
-  if (t.ramp0 != null && Math.abs(lat) <= t.hw - 0.2) { const k = (f - t.ramp0 + N) % N; if (k < t.rampLen) g += RAMP_H * (k / t.rampLen); }
-  return g;
+  const k = rampPos(t, fidx, lat);
+  return baseGround(t, fidx) + (k >= 0 ? RAMP_H * (k / t.rampLen) : 0);
 }
-const slopeAt = (t, fidx, lat = 0) => (groundAt(t, fidx + 1, lat) - groundAt(t, fidx - 1, lat)) / (2 * t.ds);
+// Slope of the road under the car. The ramp's own slope is added separately so the sudden drop
+// at its lip is never mistaken for a downhill — that used to slam cars down instead of launching them.
+function slopeAt(t, fidx, lat = 0){
+  const base = (baseGround(t, fidx + 1) - baseGround(t, fidx - 1)) / (2 * t.ds);
+  return base + (rampPos(t, fidx, lat) >= 0 ? RAMP_H / (t.rampLen * t.ds) : 0);
+}
 function trackNear(x, z, r){
   for (const t of TRACKS) for (let i = 0; i < t.N; i += 2) { const q = t.P[i]; if ((q.x - x) ** 2 + (q.z - z) ** 2 < (t.hw + r) ** 2) return true; }
   return false;

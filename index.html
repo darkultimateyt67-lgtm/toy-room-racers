@@ -84,7 +84,7 @@ import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 window.THREE = Object.assign({}, T, {EffectComposer, RenderPass, OutputPass, UnrealBloomPass, GTAOPass, RoomEnvironment, BufferGeometryUtils});
-const V = 23;
+const V = 24;
 for (const f of ['data', 'core', 'room', 'track', 'cars', 'models1', 'models2', 'audio', 'game', 'ui']) {
   await new Promise((ok, fail) => { const s = document.createElement('script'); s.src = `js/${f}.js?v=${V}`; s.onload = ok; s.onerror = fail; document.body.appendChild(s); });
 }
