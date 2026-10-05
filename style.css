@@ -147,3 +147,7 @@ h2{font-size:24px;line-height:1.1}
   -webkit-mask:radial-gradient(circle at 50% 52%,transparent 22%,#000 58%);mask:radial-gradient(circle at 50% 52%,transparent 22%,#000 58%);
   animation:warpSpin .25s linear infinite}
 @keyframes warpSpin{from{transform:rotate(0)}to{transform:rotate(3deg)}}
+
+.buy2{display:flex;gap:6px;align-items:center}
+.buy2 button{min-width:0}
+.part .buy2 button{padding:7px 9px}

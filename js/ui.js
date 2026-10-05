@@ -50,12 +50,13 @@ function renderGarage(){
     h += `<div class="car ${ui.view === c.id ? 'view' : ''} ${save.sel === c.id ? 'sel' : ''} ${!ul ? 'locked' : ''}" data-car="${c.id}">
       <div class="swatch" style="background:${hexStr(paintOf(c))}"></div><b>${c.name}</b>
       <div class="cmeta"><span class="tb" style="--tc:${TIERS[c.tier].color}">${TIERS[c.tier].id}</span>PR ${PR(stats(c))}</div>
-      <small>${o ? (save.sel === c.id ? '✔ Driving' : creator && !save.owned.includes(c.id) ? '🛠 Creator' : 'Owned') : ul ? '🪙 ' + c.price : '🔒 ' + TIERS[c.tier].id + ' Tier'}</small></div>`;
+      <small>${o ? (save.sel === c.id ? '✔ Driving' : creator && !save.owned.includes(c.id) && !c.creatorOnly ? '🪙 ' + c.price + ' · 🛠 Free' : 'Owned') : ul ? '🪙 ' + c.price : '🔒 ' + TIERS[c.tier].id + ' Tier'}</small></div>`;
   });
   h += '</div>';
   const s = stats(v), mx = {top: v.top * 1.5, accel: v.accel * 1.55, grip: v.grip * 1.45};
   const bar = (label, val, max, cap, txt) => `<div class="stat"><span>${label}</span><div class="bar"><u style="width:${Math.min(100, max / cap * 100)}%"></u><i style="width:${Math.min(100, val / cap * 100)}%"></i></div><b>${txt}</b></div>`;
-  h += `<div class="detail"><div class="row"><h2>${v.name}</h2>${owned ? (save.sel === v.id ? '<span class="tag">✔ Driving</span>' : '<button id="drive">Drive this</button>') :
+  const both = creator && !v.creatorOnly && !save.owned.includes(v.id), earned = save.tiers > v.tier;
+  h += `<div class="detail"><div class="row"><h2>${v.name}</h2>${both ? `<div class="buy2"><button id="buy" ${save.coins < v.price || !earned ? 'disabled' : ''} title="${earned ? 'Pay with coins you earned' : 'Win your way to ' + TIERS[v.tier].id + ' Tier first'}">Buy 🪙 ${v.price}${earned ? '' : ' 🔒'}</button>${save.sel === v.id ? '<span class="tag">🛠 Driving free</span>' : '<button id="drive" class="alt">🛠 Free</button>'}</div>` : owned ? (save.sel === v.id ? '<span class="tag">✔ Driving</span>' : '<button id="drive">Drive this</button>') :
     unlocked ? `<button id="buy" ${save.coins < v.price ? 'disabled' : ''}>Buy 🪙 ${v.price}</button>` : `<span class="tag">🔒 Unlocks in ${TIERS[v.tier].id} Tier</span>`}</div>
     <p class="desc">${v.desc}</p>
     ${bar('Top speed', s.top, mx.top, 70, Math.round(s.top * kmhOf(v)).toLocaleString())}
@@ -71,7 +72,7 @@ function renderGarage(){
       const lv = lvl(v.id, p.id), cost = upCost(v, lv);
       h += `<div class="part"><span class="ic">${p.icon}</span><div><b>${p.name}</b><br><small>${p.desc}</small></div>
         <div class="pips">${Array.from({length: MAXLV}, (_, i) => `<span class="${i < lv ? 'on' : ''}"></span>`).join('')}</div>
-        ${lv >= MAXLV ? '<button disabled>MAX</button>' : creator ? `<button data-up="${p.id}">🛠 Free</button>` : `<button data-up="${p.id}" ${save.coins < cost ? 'disabled' : ''}>🪙 ${cost}</button>`}</div>`;
+        ${lv >= MAXLV ? '<button disabled>MAX</button>' : `<div class="buy2"><button data-up="${p.id}" data-pay="1" ${save.coins < cost ? 'disabled' : ''}>🪙 ${cost}</button>${creator ? `<button data-up="${p.id}" class="alt">🛠 Free</button>` : ''}</div>`}</div>`;
     });
   }
   h += '</div>';
@@ -81,9 +82,9 @@ function renderGarage(){
   if ($('drive')) $('drive').onclick = () => { save.sel = v.id; persist(); renderMenu(); };
   el.querySelectorAll('[data-paint]').forEach(b => b.onclick = () => { save.paint[v.id] = +b.dataset.paint; persist(); renderMenu(); });
   el.querySelectorAll('[data-up]').forEach(b => b.onclick = () => {
-    const pid = b.dataset.up, lv = lvl(v.id, pid), cost = upCost(v, lv);
-    if (!creator && save.coins < cost) return;
-    if (!creator) save.coins -= cost;
+    const pid = b.dataset.up, lv = lvl(v.id, pid), cost = upCost(v, lv), pay = !!b.dataset.pay;
+    if (pay) { if (save.coins < cost) return; save.coins -= cost; }      // the hard-work way: spend earned coins
+    else if (!creator) return;                                         // free is for creators only
     save.up[v.id] = save.up[v.id] || {}; save.up[v.id][pid] = lv + 1; persist();
     SFX.init(); SFX.coin(); renderMenu();
   });
@@ -94,6 +95,7 @@ function renderSettings(){
     <p>Auto starts on High and steps down by itself if your computer struggles. Ultra adds sharper shadows and full-resolution ambient occlusion.</p>
     <div class="qrow">${opts.map(([k, l]) => `<button class="qbtn ${gfx.mode === k ? 'on' : ''}" data-q="${k}">${l}</button>`).join('')}</div>
     <div class="fps">Now running: <b>${QUALITY[gfx.level].label}</b> · <span id="fpsNow">measuring…</span></div></div>
+    <div class="rushbox" style="margin-top:10px"><h2>🏁 Made by</h2><p>darkultimateyt67 &amp; AAAMAQ (BiG MAQ Studio)</p></div>
     <div class="rushbox" style="margin-top:10px"><h2>🔊 Sound</h2><p>Engines, pops, tyres and crashes are all synthesised live.</p><button id="muteBtn" class="alt">${SFX.muted ? '🔇 Sound is off — turn on' : '🔊 Sound is on — turn off'}</button></div>`;
   $('tab-settings').querySelectorAll('[data-q]').forEach(b => b.onclick = () => { setQuality(b.dataset.q); renderMenu(); });
   $('muteBtn').onclick = () => { SFX.toggleMute(); renderMenu(); };

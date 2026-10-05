@@ -31,6 +31,10 @@ Toy cars racing around a giant bedroom. Race on orange toy track under the bed, 
 
 Open `index.html` in Chrome or Edge. An internet connection is needed the first time, because the 3D engine (three.js) loads from a CDN.
 
+## Credits
+
+Created by **[darkultimateyt67-lgtm](https://github.com/darkultimateyt67-lgtm)** and **[AAAMAQ](https://github.com/AAAMAQ)** (BiG MAQ Studio).
+
 ## Copyright
 
-© 2026 darkultimateyt67-lgtm. **All rights reserved.** This game is not open source: you may play it, but you may not copy, modify, redistribute or sell it without permission.
+© 2026 darkultimateyt67-lgtm and AAAMAQ. **All rights reserved.** This game is not open source: you may play it, but you may not copy, modify, redistribute or sell it without permission.
