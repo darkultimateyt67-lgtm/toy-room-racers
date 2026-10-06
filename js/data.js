@@ -75,7 +75,7 @@ const PARTS = [
   {id:'tires',  name:'Tyres',   desc:'Grip & turning',       icon:'🛞'},
   {id:'nitro',  name:'Nitro',   desc:'Boost size & refill',  icon:'🔥'},
   {id:'bumper', name:'Bumper',  desc:'Keep speed in crashes',icon:'🛡️'},
-  {id:'traction',name:'Traction',desc:'Launch, hills & drifts',icon:'🧲'},
+  {id:'traction',name:'Traction',desc:'Launch, hills & drifts',icon:'🧲', isNew:true},
 ];
 const MAXLV = 5;
 const PAINTS = [0xd62839,0xff8c42,0xffd166,0x06d6a0,0x2a9d8f,0x3a86ff,0x1d3557,0x9b5de5,0xf7c6d9,0xf4f1ea,0xc9ccd1,0x222831];

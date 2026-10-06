@@ -70,14 +70,14 @@ function renderGarage(){
     <div class="stat"><span>Engine</span><small>${v.engName || ({flat4: 'Air-cooled flat-4', i4: 'Inline-4', v8: 'Supercharged V8', v8big: 'Blown big-block V8', turbo4: 'Turbo inline-4', v10: 'V10', i6: 'Straight-6', v12: 'V12', jet: 'Twin jet turbines', warp: 'Twin plasma thrusters',
       diesel: 'Turbo-diesel straight-6', kart: '2-stroke single', rotary: 'Turbo twin-rotor', v8fp: 'Flat-plane V8', i8: 'Supercharged straight-8', v6t: 'Hybrid twin-turbo V6', ev: 'Twin electric motors', fuel: 'Blown nitro Hemi V8', hover: 'Twin hover fans'})[v.engine]} · ${v.hover ? 'no wheels' : v.gears === 1 ? 'direct drive' : v.gears + '-speed'} · ${(v.red / 1000).toFixed(1)}k ${v.engine === 'ev' ? 'max rpm' : 'redline'}</small></div>`;
   if (owned) {
-    h += `<div class="sub">Paint</div><div class="paints">${[v.color, ...PAINTS.filter(p => p !== v.color)].map(p => `<button class="paint ${paintOf(v) === p ? 'on' : ''}" data-paint="${p}" style="background:${hexStr(p)}"></button>`).join('')}</div>`;
     h += `<div class="sub">Upgrades</div>`;
     PARTS.forEach(p => {
       const lv = lvl(v.id, p.id), cost = upCost(v, lv);
-      h += `<div class="part"><span class="ic">${p.icon}</span><div><b>${p.name}</b><br><small>${p.desc}</small></div>
+      h += `<div class="part"><span class="ic">${p.icon}</span><div><b>${p.name}</b>${p.isNew ? '<span class="newTag">NEW</span>' : ''}<br><small>${p.desc}</small></div>
         <div class="pips">${Array.from({length: MAXLV}, (_, i) => `<span class="${i < lv ? 'on' : ''}"></span>`).join('')}</div>
         ${lv >= MAXLV ? '<button disabled>MAX</button>' : `<div class="buy2"><button data-up="${p.id}" data-pay="1" ${save.coins < cost ? 'disabled' : ''}>🪙 ${cost}</button>${creator ? `<button data-up="${p.id}" class="alt">🛠 Free</button>` : ''}</div>`}</div>`;
     });
+    h += `<div class="sub">Paint</div><div class="paints">${[v.color, ...PAINTS.filter(p => p !== v.color)].map(p => `<button class="paint ${paintOf(v) === p ? 'on' : ''}" data-paint="${p}" style="background:${hexStr(p)}"></button>`).join('')}</div>`;
   }
   h += '</div>';
   el.innerHTML = h;
