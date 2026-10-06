@@ -77,7 +77,7 @@ function tyreGeo(r, w, rimR){
   }
   g.rotateZ(Math.PI / 2);
   g.computeVertexNormals();
-  return (_tyre[key] = g);
+  return (_tyre[key] = shared(g));
 }
 
 // ---------- rims ----------
@@ -130,7 +130,7 @@ const _coil = {};
 function coilGeo(R, turns, wire){
   const key = R + '|' + turns + '|' + wire; if (_coil[key]) return _coil[key];
   const pts = []; for (let i = 0; i <= turns * 16; i++) { const a = i / 16 * Math.PI * 2; pts.push(new V3(Math.cos(a) * R, i / (turns * 16), Math.sin(a) * R)); }
-  return (_coil[key] = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), turns * 24, wire, 6, false));
+  return (_coil[key] = shared(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), turns * 24, wire, 6, false)));
 }
 function addCoilover(car, top, bottom, R = 0.07, mat){
   const g = new THREE.Group(); car.root.add(g);
@@ -236,6 +236,17 @@ function buildCar(def, paint){
   makeFlames(car);
   batchCar(car);
   return car;
+}
+
+// Free a car's own GPU data when it leaves the scene; cached shapes and shared materials stay.
+function disposeCar(car){
+  const keepMat = new Set([...Object.values(CM), ...Object.values(TREAD), ...Object.values(_mats), ...Object.values(M3)]);
+  const keepTex = new Set([softTex]); keepMat.forEach(m => m.map && keepTex.add(m.map));
+  car.root.traverse(o => {
+    if (!o.isMesh) return;
+    if (!o.geometry.userData.shared) o.geometry.dispose();
+    for (const m of [].concat(o.material)) if (!keepMat.has(m)) { if (m.map && !keepTex.has(m.map)) m.map.dispose(); m.dispose(); }
+  });
 }
 
 // Fold every non-moving part into a few draw calls; moving parts stay separate.

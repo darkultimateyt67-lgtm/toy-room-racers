@@ -146,9 +146,12 @@ function smoothGeo(g){
   return r;
 }
 // Rounded box: every edge and corner is curved.
+// Thin parts (spokes, slats, rungs) round off less than a pixel, so they get one bevel step instead of three.
 const _rbox = {};
 function rboxGeo(w, h, d, r = 0.1, seg = 3){
   r = Math.max(0.001, Math.min(r, w / 2 - 0.001, h / 2 - 0.001, d / 2 - 0.001));
+  const thin = r < 0.009;
+  if (thin) seg = 1;
   const key = [w, h, d, r, seg].map(v => v.toFixed(3)).join('|');
   if (_rbox[key]) return _rbox[key];
   const e = 0.0004, s = new THREE.Shape(), iw = w / 2 - r, ih = h / 2 - r;
@@ -157,17 +160,19 @@ function rboxGeo(w, h, d, r = 0.1, seg = 3){
   s.lineTo(-iw, ih + e); s.absarc(-iw, ih, e, Math.PI / 2, Math.PI, false);
   s.lineTo(-iw - e, -ih); s.absarc(-iw, -ih, e, Math.PI, Math.PI * 1.5, false);
   const depth = Math.max(0.0005, d - 2 * r);
-  const g = new THREE.ExtrudeGeometry(s, {depth, bevelEnabled: true, bevelThickness: r, bevelSize: r, bevelSegments: seg, curveSegments: 3});
+  const g = new THREE.ExtrudeGeometry(s, {depth, bevelEnabled: true, bevelThickness: r, bevelSize: r, bevelSegments: seg, curveSegments: thin ? 1 : 3});
   g.translate(0, 0, -depth / 2);
-  return (_rbox[key] = smoothGeo(g));
+  return (_rbox[key] = shared(smoothGeo(g)));
 }
+// Cached shapes are used by many cars at once, so they're never freed with a car.
+const shared = g => (g.userData.shared = true, g);
 const _cyl = {};
 function cylGeo(rt, rb, h, seg = 20, open = false){
   const k = [rt, rb, h, seg, open].join('|');
-  return _cyl[k] || (_cyl[k] = new THREE.CylinderGeometry(rt, rb, h, seg, 1, open));
+  return _cyl[k] || (_cyl[k] = shared(new THREE.CylinderGeometry(rt, rb, h, seg, 1, open)));
 }
 const _sph = {};
-function sphGeo(r, ws = 24, hs = 16){ const k = r + '|' + ws + '|' + hs; return _sph[k] || (_sph[k] = new THREE.SphereGeometry(r, ws, hs)); }
+function sphGeo(r, ws = 24, hs = 16){ const k = r + '|' + ws + '|' + hs; return _sph[k] || (_sph[k] = shared(new THREE.SphereGeometry(r, ws, hs))); }
 
 function canvasTex(w, h, draw, repeat, data){
   const c = document.createElement('canvas'); c.width = w; c.height = h;

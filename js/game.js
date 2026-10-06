@@ -284,8 +284,8 @@ function coinMesh(x, y, z){
 
 // ---------- race flow ----------
 function cleanupRun(){
-  if (player) { scene.remove(player.car.root); player = null; }
-  if (race) { race.ais.forEach(a => scene.remove(a.car.root)); race.items.forEach(c => scene.remove(c.m)); getTrackGroup(race.t).visible = false; race = null; }
+  if (player) { scene.remove(player.car.root); disposeCar(player.car); player = null; }
+  if (race) { race.ais.forEach(a => { scene.remove(a.car.root); disposeCar(a.car); }); race.items.forEach(c => scene.remove(c.m)); getTrackGroup(race.t).visible = false; race = null; }
   if (rush) { rush.coins.forEach(c => scene.remove(c)); rush = null; }
   clearSkids(); SFX.stopEngines();
   PFX.forEach(p => p.s.visible = false);

@@ -115,7 +115,7 @@ function renderRush(){
 function updateShowroom(dt){
   const def = carById(ui.view), paint = paintOf(def);
   if (show.id !== def.id || show.paint !== paint) {
-    if (show.car) turnTop.remove(show.car.root);
+    if (show.car) { turnTop.remove(show.car.root); disposeCar(show.car); }
     show.car = buildCar(def, paint); turnTop.add(show.car.root);
     show.id = def.id; show.paint = paint; show.eng = makeEngineState(def); show.def = def;
     show.dist = def.showD || 4.2 + def.l * 1.15;

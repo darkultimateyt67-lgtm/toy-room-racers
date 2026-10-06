@@ -7,7 +7,7 @@ function flareArc(car, x, y, z, R){
 function trumpetGeo(){
   if (trumpetGeo.g) return trumpetGeo.g;
   const p = []; for (let i = 0; i <= 10; i++) { const t = i / 10; p.push(new V2(0.03 + Math.pow(t, 3) * 0.035, t * 0.11)); }
-  return (trumpetGeo.g = new THREE.LatheGeometry(p, 18));
+  return (trumpetGeo.g = shared(new THREE.LatheGeometry(p, 18)));
 }
 
 // ============ 6. RALLY HATCH ============
