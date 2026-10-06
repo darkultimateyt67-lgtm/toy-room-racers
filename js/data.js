@@ -8,33 +8,65 @@ const TIERS = [
   {id:'M', name:'Master',    color:'#ff4d6d', top:45, lat:70, mult:5.5, pr:245},
 ];
 
-// engine: sound + visual engine type. gears: gearbox. idle/red: rpm range.
+// engine: sound + visual engine type. gears: gearbox. idle/red: rpm range. turbo: whistle + boost gauge.
+// cam: chase-camera size factor for big cars. showY/showD: showroom framing.
 const CARS = [
+  // ---- D · Rookie ----
   {id:'buggy',   name:'Sand Buggy',     tier:0, price:0,    color:0xff8c42, desc:'Air-cooled flat-four hanging out the back. Light and nimble.',
    top:22, accel:16, grip:2.6, mass:0.8, w:1.5, l:2.0, engine:'flat4', gears:4, idle:900,  red:6500,  cyl:4},
   {id:'van',     name:'Ice Cream Van',  tier:0, price:150,  color:0xf7c6d9, desc:'Slow and heavy, but shrugs off every bump.',
    top:20, accel:15, grip:2.4, mass:1.6, w:1.45,l:2.3, engine:'i4',    gears:4, idle:750,  red:5200,  cyl:4},
+  {id:'mini',    name:'Pocket Racer',   tier:0, price:250,  color:0x3fb8af, desc:'Tiny bubble car with its engine lid propped open. Watch the fan belt whirr.',
+   top:22, accel:17, grip:2.75,mass:0.75,w:1.35,l:2.0, engine:'i4',    gears:4, idle:900,  red:7200,  cyl:4},
   {id:'muscle',  name:'Muscle Coupe',   tier:0, price:350,  color:0xd62839, desc:'Supercharged V8 bursting through the hood. Watch the belt spin.',
    top:27, accel:18, grip:2.2, mass:1.1, w:1.45,l:2.5, engine:'v8',    gears:4, idle:750,  red:6800,  cyl:8},
+  {id:'tow',     name:'Tow Truck',      tier:0, price:450,  color:0xffb000, desc:'Spinning beacons, a swinging hook and a smoke-stack flapper. Bulldozes through crashes.',
+   top:25, accel:17, grip:2.4, mass:1.8, w:1.55,l:2.6, engine:'diesel',gears:5, idle:650,  red:4200,  cyl:6, turbo:true, cam:1.15},
+  // ---- C · Club ----
   {id:'monster', name:'Monster Truck',  tier:1, price:600,  color:0x2a9d8f, desc:'Giant tyres, long-travel shocks, zoomie headers that spit fire.',
-   top:25, accel:20, grip:2.3, mass:1.7, w:2.3, l:2.4, engine:'v8big', gears:3, idle:700,  red:6000,  cyl:8},
+   top:25, accel:20, grip:2.3, mass:1.7, w:2.3, l:2.4, engine:'v8big', gears:3, idle:700,  red:6000,  cyl:8, cam:1.45, showY:1.3, showD:8.6},
+  {id:'kart',    name:'Go-Kart',        tier:1, price:700,  color:0x8ac926, desc:'Two-stroke single screaming next to your elbow. Chain drive, no suspension, pure grip.',
+   top:25, accel:21, grip:3.1, mass:0.6, w:1.4, l:1.75,engine:'kart',  gears:1, idle:2200, red:14500, cyl:1},
   {id:'police',  name:'Police Cruiser', tier:1, price:850,  color:0x1d3557, desc:'Interceptor V8, strobing light bar and a push bar.',
    top:29, accel:19, grip:2.6, mass:1.2, w:1.5, l:2.5, engine:'v8',    gears:5, idle:700,  red:6200,  cyl:8},
+  {id:'fire',    name:'Fire Engine',    tier:1, price:950,  color:0xd7191f, desc:'Ladder on the roof, flashing lights and a swinging brass bell. Nothing pushes it around.',
+   top:28, accel:19, grip:2.5, mass:2.1, w:1.65,l:3.05,engine:'diesel',gears:5, idle:600,  red:4000,  cyl:6, turbo:true, cam:1.25, showY:0.9},
+  // ---- B · Pro ----
   {id:'rally',   name:'Rally Hatch',    tier:2, price:1200, color:0x06d6a0, desc:'Turbo four with anti-lag pops. Grips like glue.',
    top:30, accel:22, grip:3.0, mass:1.0, w:1.5, l:2.15,engine:'turbo4',gears:6, idle:950,  red:7800,  cyl:4},
+  {id:'drift',   name:'Drift Coupe',    tier:2, price:1450, color:0xf4f1ea, desc:'Pop-up headlights, a turbo poking through the hood and a screamer pipe that spits flame.',
+   top:31, accel:23, grip:2.9, mass:0.95,w:1.6, l:2.45,engine:'rotary',gears:6, idle:1100, red:9500,  cyl:2, turbo:true},
   {id:'f1',      name:'Formula Toy',    tier:2, price:1700, color:0x3a86ff, desc:'Screaming V10, wings everywhere, DRS flap opens on nitro.',
    top:34, accel:24, grip:3.3, mass:0.9, w:1.7, l:2.8, engine:'v10',   gears:7, idle:4000, red:15000, cyl:10},
+  {id:'baja',    name:'Baja Trophy Truck',tier:2,price:1900,color:0xff6b35, desc:'Long-travel shocks at every corner and radiator fans whirring in the bed.',
+   top:32, accel:24, grip:3.0, mass:1.5, w:1.9, l:2.9, engine:'v8',    gears:5, idle:800,  red:6800,  cyl:8, engName:'Big-block V8', cam:1.15},
+  // ---- A · Elite ----
   {id:'roadster',name:'Hot Rod',        tier:3, price:2400, color:0xe9c46a, desc:'Chrome straight-six out in the open, whitewall tyres.',
    top:36, accel:26, grip:3.2, mass:1.0, w:1.6, l:2.6, engine:'i6',    gears:5, idle:800,  red:7000,  cyl:6},
+  {id:'gt',      name:'GT Racer',       tier:3, price:2900, color:0x2b9348, desc:'Flat-plane V8 under a glass hood bubble, side pipes that spit fire, swan-neck wing.',
+   top:37, accel:27, grip:3.35,mass:1.0, w:1.75,l:2.75,engine:'v8fp',  gears:6, idle:1100, red:9000,  cyl:8},
+  {id:'arrow',   name:'Silver Arrow',   tier:3, price:3200, color:0xc9ccd1, desc:'1930s streamliner: supercharged straight-eight, wire wheels and leather straps.',
+   top:39, accel:26, grip:3.1, mass:1.0, w:1.55,l:3.0, engine:'i8',    gears:4, idle:900,  red:8000,  cyl:8},
+  // ---- S · Superstar ----
   {id:'hyper',   name:'Hyper Wedge',    tier:4, price:3500, color:0x9b5de5, desc:'V12 under a glass bubble and an active rear wing.',
    top:40, accel:29, grip:3.5, mass:1.0, w:1.7, l:2.75,engine:'v12',   gears:7, idle:1000, red:9200,  cyl:12},
+  {id:'lmp',     name:'Le Mans Prototype',tier:4,price:4200,color:0xe63946, desc:'Hybrid twin-turbo V6, shark fin, lit-up number panels. Built for 24 hours flat out.',
+   top:42, accel:31, grip:3.7, mass:0.95,w:1.8, l:3.1, engine:'v6t',   gears:7, idle:1300, red:10000, cyl:6, turbo:true},
+  {id:'volt',    name:'Volt Hyper',     tier:4, price:4700, color:0x00b4d8, desc:'Silent electric thrust. Glowing motors under glass, light bars and a pop-up wing.',
+   top:41, accel:36, grip:3.6, mass:1.15,w:1.8, l:2.8, engine:'ev',    gears:1, idle:0,    red:18000, cyl:0},
+  // ---- M · Master ----
   {id:'rocket',  name:'Rocket Car',     tier:5, price:5000, color:0xc9ccd1, desc:'Twin jet turbines with wheels bolted on.',
-   top:46, accel:33, grip:3.6, mass:1.1, w:1.6, l:3.2, engine:'jet',   gears:1, idle:3000, red:12000, cyl:0},
+   top:46, accel:33, grip:3.6, mass:1.1, w:1.6, l:3.2, engine:'jet',   gears:1, idle:3000, red:12000, cyl:0, cam:1.15},
+  {id:'dragster',name:'Top Fuel Dragster',tier:5,price:5800,color:0xffd23f, desc:'Nitro Hemi with a giant blower and sixteen zoomie pipes. Huge rear slicks, wheelie bars.',
+   top:50, accel:38, grip:3.2, mass:1.0, w:1.6, l:3.8, engine:'fuel',  gears:2, idle:1800, red:8400,  cyl:8, turnFall:36, cam:1.2},
+  {id:'hover',   name:'Hover Racer',    tier:5, price:6800, color:0x7b2cbf, desc:'No wheels at all: four glowing hover pads and twin ducted fans.',
+   top:48, accel:35, grip:4.0, mass:1.0, w:1.8, l:3.0, engine:'hover', gears:1, idle:2500, red:11000, cyl:0, hover:true},
   // Creator-only prototype: never sold, never driven by the AI, only exists in Creator Mode.
   {id:'warp',    name:'Warp Phantom',   tier:5, price:0, creatorOnly:true, color:0x12151f, desc:'Creator-only prototype. Twin plasma thrusters — the speedo breaks 70,000 km/h.',
    top:130, accel:95, grip:7.5, mass:1.2, w:1.75,l:3.0, engine:'warp',  gears:1, idle:4000, red:30000, cyl:0, kmh:560, turnFall:260},
 ];
-const isJet = d => d.engine === 'jet' || d.engine === 'warp';
+const isJet = d => d.engine === 'jet' || d.engine === 'warp' || d.engine === 'hover';
+const hasTurbo = d => d.engine === 'turbo4' || !!d.turbo;
 const kmhOf = d => d.kmh || 4.5;
 
 const PARTS = [

@@ -18,7 +18,7 @@ function engineStep(e, def, speed, throttle, top, dt){
   if (e.shiftT > 0) e.shiftT -= dt;
   else if (e.gear < G && v > gTop(e.gear) * 0.97 && throttle > 0.3) {
     e.gear++; e.shiftT = 0.17; e.ev = 'up';
-    if (Math.random() < 0.65) { e.backfire = 0.6 + Math.random() * 0.5; e.ev = 'upPop'; }
+    if (def.engine !== 'ev' && Math.random() < 0.65) { e.backfire = 0.6 + Math.random() * 0.5; e.ev = 'upPop'; }
   } else if (e.gear > 1 && v < gTop(e.gear - 1) * 0.72) {
     e.gear--; e.shiftT = 0.06; e.ev = 'down';
     if (throttle < 0.2 && Math.random() < 0.6) { e.backfire = 0.5; e.ev = 'downPop'; }
@@ -28,20 +28,21 @@ function engineStep(e, def, speed, throttle, top, dt){
   tgt = Math.max(idle, tgt);
   if (e.shiftT > 0 && e.ev !== 'down') tgt *= 0.74;
   e.rpm += (tgt - e.rpm) * Math.min(1, dt * (tgt > e.rpm ? (free ? 5 : 14) : 9));
+  const ev = def.engine === 'ev';
   if (e.rpm > red * 0.985 && throttle > 0.5) {
     e.rpm = red * (0.92 + Math.random() * 0.04);
-    if (Math.random() < 0.18) { e.backfire = Math.max(e.backfire, 0.55); e.ev = e.ev || 'pop'; }
+    if (!ev && Math.random() < 0.18) { e.backfire = Math.max(e.backfire, 0.55); e.ev = e.ev || 'pop'; }
   }
-  if (e.lastThrottle > 0.6 && throttle < 0.1 && e.rpm > red * 0.5) e.crackle = 0.8;
+  if (!ev && e.lastThrottle > 0.6 && throttle < 0.1 && e.rpm > red * 0.5) e.crackle = 0.8;
   if (e.crackle > 0) { e.crackle -= dt; if (Math.random() < dt * 11) { e.backfire = Math.max(e.backfire, 0.4 + Math.random() * 0.5); e.ev = e.ev || 'pop'; } }
   e.backfire = Math.max(0, e.backfire - dt * 4.5);
   e.lastThrottle = throttle;
-  const boostT = def.engine === 'turbo4' ? throttle * clamp((e.rpm - 2500) / 3500, 0, 1) : 0;
+  const boostT = hasTurbo(def) ? throttle * clamp((e.rpm - 2500) / 3500, 0, 1) : 0;
   e.boost += (boostT - e.boost) * Math.min(1, dt * 3);
 }
 function engineSFX(o, vol = 1){
   const ev = o.eng.ev; if (!ev || vol < 0.15) return;
-  if (ev === 'up' || ev === 'upPop') { SFX.shift(); if (o.def.engine === 'turbo4' && vol > 0.9) SFX.blowoff(); }
+  if (ev === 'up' || ev === 'upPop') { SFX.shift(); if (hasTurbo(o.def) && vol > 0.9) SFX.blowoff(); }
   if (ev.endsWith('op') || ev === 'pop') SFX.pop(ev === 'upPop' && vol > 0.9);
 }
 
@@ -384,7 +385,7 @@ function updateRace(dt){
   for (const a of r.ais) { poseAndAnimate(a, dt); tyreFX(a, dt, Math.abs(a.aLat) > 40 ? 0.5 : 0); }
   // sound
   SFX.engine(p.def.engine, p.eng.rpm, p.throttle, p.def.red, p.eng.boost);
-  SFX.screech(p.air ? 0 : clamp((p.slip - 0.3) * 1.2, 0, 1));
+  SFX.screech(p.air || p.def.hover ? 0 : clamp((p.slip - 0.3) * 1.2, 0, 1));
   let near = null, nd = 1e9;
   for (const a of r.ais) { const d = Math.hypot(a.x - p.x, a.z - p.z); if (d < nd) { nd = d; near = a; } engineSFX(a, 1 - d / 15); }
   if (near) SFX.aiEngine(near.def.engine, near.eng.rpm, near.def.red, clamp(1 - nd / 30, 0, 1) * 0.55);
@@ -408,7 +409,7 @@ function updateRush(dt){
   rush.time -= dt;
   poseAndAnimate(p, dt); tyreFX(p, dt, p.slip);
   SFX.engine(p.def.engine, p.eng.rpm, p.throttle, p.def.red, p.eng.boost);
-  SFX.screech(p.air ? 0 : clamp((p.slip - 0.3) * 1.2, 0, 1));
+  SFX.screech(p.air || p.def.hover ? 0 : clamp((p.slip - 0.3) * 1.2, 0, 1));
   $('hPosN').textContent = '🪙' + rush.got; $('hPosOf').textContent = '';
   $('hTime').textContent = '⏱ ' + Math.max(0, Math.ceil(rush.time)) + 's';
   $('hCoins').textContent = 'Best: ' + save.best;
@@ -426,7 +427,7 @@ function resetCar(){
 // ---------- camera ----------
 function updateCam(o, dt, snap){
   const fx = Math.sin(o.head), fz = Math.cos(o.head);
-  const big = o.def.id === 'monster' ? 1.45 : o.def.id === 'rocket' ? 1.15 : 1;
+  const big = o.def.cam || 1;
   const P = [[6.2, 2.7], [12, 7], [3.0, 1.35]][camMode];
   const des = _v.set(o.x - fx * P[0] * big, o.y + P[1] * big, o.z - fz * P[0] * big);
   des.x = clamp(des.x, -ROOM + 1.5, ROOM - 1.5); des.z = clamp(des.z, -ROOM + 1.5, ROOM - 1.5);
@@ -495,7 +496,7 @@ function drawTacho(p){
   g.fillText(p.def.engine === 'warp' ? 'W' : p.def.engine === 'jet' ? 'J' : p.def.gears === 1 ? 'D' : (p.speed < -0.5 ? 'R' : e.gear), cx, cy + 4);
   g.font = 'bold 26px "Baloo 2", sans-serif'; g.fillText(Math.round(Math.abs(p.speed) * kmhOf(p.def)).toLocaleString(), cx, cy + 46);
   g.font = '600 12px "Baloo 2", sans-serif'; g.fillStyle = '#fffa'; g.fillText('KM/H', cx, cy + 66); g.fillText('×1000 RPM', cx, cy + 82);
-  if (p.def.engine === 'turbo4') { g.fillStyle = '#29d3ff'; g.fillRect(cx - 30, cy + 92, 60 * e.boost, 5); }
+  if (hasTurbo(p.def)) { g.fillStyle = '#29d3ff'; g.fillRect(cx - 30, cy + 92, 60 * e.boost, 5); }
 }
 
 // ---------- results ----------

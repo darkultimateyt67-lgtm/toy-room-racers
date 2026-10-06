@@ -6,7 +6,7 @@
 <title>Toy Room Racers</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <div id="loading"><div class="ld-title">Toy Room Racers</div><div class="ld-sub">Tidying the room…</div></div>
@@ -84,8 +84,8 @@ import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 window.THREE = Object.assign({}, T, {EffectComposer, RenderPass, OutputPass, UnrealBloomPass, GTAOPass, RoomEnvironment, BufferGeometryUtils});
-const V = 24;
-for (const f of ['data', 'core', 'room', 'track', 'cars', 'models1', 'models2', 'audio', 'game', 'ui']) {
+const V = 25;
+for (const f of ['data', 'core', 'room', 'track', 'cars', 'models1', 'models2', 'models3', 'audio', 'game', 'ui']) {
   await new Promise((ok, fail) => { const s = document.createElement('script'); s.src = `js/${f}.js?v=${V}`; s.onload = ok; s.onerror = fail; document.body.appendChild(s); });
 }
 </script>

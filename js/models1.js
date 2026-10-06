@@ -32,7 +32,7 @@ function sedanBody(car, s){
     for (let i = 0; i <= 12; i++) { const t = 0.12 + i / 12 * 0.76, u = 1 - t; rp.push([u * u * b + 2 * u * t * (b + c) / 2 + t * t * c, u * u * roof + 2 * u * t * (roof + bulge) + t * t * roof + 0.07]); }
     const rc = [['m', rp[0][0], rp[0][1] + 0.012]];
     rp.forEach(p => rc.push(['l', p[0], p[1] + 0.012])); rp.slice().reverse().forEach(p => rc.push(['l', p[0], p[1] - 0.03]));
-    addMesh(C, extrudeX(profShape(rc), gw * (1 - gt) + 0.05, 0.02), car.paint);
+    addMesh(C, extrudeX(profShape(rc), gw * (1 - gt) + 0.05, 0.02), s.roofMat || car.paint);
     // A and C pillars
     const pillar = (za, ya, zb, yb2) => {
       const dz = zb - za, dy = yb2 - ya, len = Math.hypot(dz, dy), ym = (ya + yb2) / 2 + 0.035;

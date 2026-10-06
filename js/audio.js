@@ -13,6 +13,15 @@ const SFX = (() => {
     v12:    {cyl: 12, sub: 0.4, harm: 0.8,  cut: 1300, lope: 0.0,  vol: 0.38},
     jet:    {jet: true, vol: 0.5},
     warp:   {jet: true, vol: 0.55},
+    diesel: {cyl: 6,  sub: 1.0, harm: 0.25, cut: 300,  lope: 0.35, vol: 0.5,  turbo: true, clatter: true},
+    kart:   {cyl: 2,  sub: 0.15,harm: 1.0,  cut: 1700, lope: 0.0,  vol: 0.32},
+    rotary: {cyl: 4,  sub: 0.35,harm: 0.95, cut: 1000, lope: 0.45, vol: 0.42, turbo: true},
+    v8fp:   {cyl: 8,  sub: 0.35,harm: 0.85, cut: 1100, lope: 0.05, vol: 0.45},
+    i8:     {cyl: 8,  sub: 0.6, harm: 0.55, cut: 700,  lope: 0.15, vol: 0.45, whine: 0.035},
+    v6t:    {cyl: 6,  sub: 0.3, harm: 0.85, cut: 1300, lope: 0.0,  vol: 0.4,  turbo: true},
+    fuel:   {cyl: 8,  sub: 1.1, harm: 0.45, cut: 380,  lope: 0.85, vol: 0.6,  whine: 0.03},
+    ev:     {ev: true, vol: 0.42},
+    hover:  {jet: true, vol: 0.45},
   };
   function init(){
     if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
@@ -31,6 +40,16 @@ const SFX = (() => {
   function voice(type){
     const P = ENG[type] || ENG.v8, v = {P, out: ctx.createGain()};
     v.out.gain.value = 0; v.out.connect(master);
+    if (P.ev) {
+      const o1 = ctx.createOscillator(), o2 = ctx.createOscillator(), o3 = ctx.createOscillator();
+      o1.type = 'triangle'; o2.type = 'sine'; o3.type = 'sawtooth';
+      const g1 = ctx.createGain(), g2 = ctx.createGain(), g3 = ctx.createGain(), lp = ctx.createBiquadFilter();
+      g1.gain.value = 0.5; g2.gain.value = 0.25; g3.gain.value = 0.04; lp.type = 'lowpass'; lp.frequency.value = 4000;
+      o1.connect(g1).connect(v.out); o2.connect(g2).connect(v.out); o3.connect(g3).connect(lp).connect(v.out);
+      [o1, o2, o3].forEach(o => o.start());
+      Object.assign(v, {o1, o2, o3, g3});
+      return v;
+    }
     if (P.jet) {
       const n = noiseSrc(), lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 600;
       const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2500; bp.Q.value = 2;
@@ -55,12 +74,20 @@ const SFX = (() => {
     n.connect(nb).connect(ng).connect(v.out);
     [o1, o2, o3].forEach(o => o.start());
     Object.assign(v, {o1, o2, o3, lp, lfo, lfoG, nb, ng});
+    if (P.whine) { const w = ctx.createOscillator(); w.type = 'sine'; const wg = ctx.createGain(); wg.gain.value = 0; w.connect(wg).connect(v.out); w.start(); v.sw = w; v.swg = wg; }
     if (P.turbo) { const t = ctx.createOscillator(); t.type = 'sine'; const tg = ctx.createGain(); tg.gain.value = 0; t.connect(tg).connect(v.out); t.start(); v.tw = t; v.tg = tg; }
     return v;
   }
   function setVoice(v, rpm, throttle, red, vol, boost = 0){
     if (!v) return;
     const now = ctx.currentTime, P = v.P, rn = clamp(rpm / red, 0, 1.1);
+    if (P.ev) {
+      const f = 40 + rpm * 0.06;
+      v.out.gain.setTargetAtTime(vol * P.vol * (0.08 + throttle * 0.5 + rn * 0.4), now, 0.05);
+      v.o1.frequency.setTargetAtTime(f, now, 0.03); v.o2.frequency.setTargetAtTime(f * 1.5, now, 0.03); v.o3.frequency.setTargetAtTime(f * 0.25 + 30, now, 0.03);
+      v.g3.gain.setTargetAtTime(0.02 + throttle * 0.06, now, 0.05);
+      return;
+    }
     v.out.gain.setTargetAtTime(vol * P.vol * (0.4 + throttle * 0.35 + rn * 0.35), now, 0.04);
     if (P.jet) {
       v.lp.frequency.setTargetAtTime(300 + rn * 2500, now, 0.08);
@@ -78,6 +105,8 @@ const SFX = (() => {
     v.lfoG.gain.setTargetAtTime(P.lope * Math.max(0, 1 - rn * 2.5) * 0.6, now, 0.05);
     v.nb.frequency.setTargetAtTime(400 + rn * 2400, now, 0.05);
     v.ng.gain.setTargetAtTime(throttle * rn * 0.12, now, 0.05);
+    if (v.sw) { v.sw.frequency.setTargetAtTime(300 + rpm * 0.32, now, 0.03); v.swg.gain.setTargetAtTime(P.whine * (0.3 + throttle) * (0.3 + rn), now, 0.05); }
+    if (P.clatter) v.ng.gain.setTargetAtTime(0.05 + throttle * rn * 0.12, now, 0.05);
     if (v.tw) { v.tw.frequency.setTargetAtTime(1800 + boost * 4500, now, 0.06); v.tg.gain.setTargetAtTime(boost * 0.05, now, 0.06); }
   }
   function kill(v){ if (!v) return; v.out.gain.setTargetAtTime(0, ctx.currentTime, 0.05); const o = v.out; setTimeout(() => { try { o.disconnect(); } catch (e) {} }, 400); }

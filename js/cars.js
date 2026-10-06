@@ -98,10 +98,13 @@ function makeRim(style, R, w, car){
   else if (style === 'deep') { ax(cylGeo(R * 0.92, R * 0.92, 0.02, 28), CM.black, face - 0.04); spoke(6, R * 0.22, CM.gun, 0.4); }
   else if (style === 'steel') { ax(cylGeo(R * 0.94, R * 0.94, 0.03, 28), car.paint, face - 0.03); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; addMesh(g, cylGeo(R * 0.12, R * 0.12, 0.035, 12), CM.black, face - 0.02, Math.cos(a) * R * 0.62, Math.sin(a) * R * 0.62, 0, 0, Math.PI / 2); } ax(sphGeo(R * 0.42, 20, 10), CM.chrome, face - 0.05).scale.set(0.35, 1, 1); }
   else if (style === 'chrome') { ax(cylGeo(R * 0.94, R * 0.94, 0.03, 28), CM.engRed, face - 0.03); ax(sphGeo(R * 0.55, 24, 12), CM.chrome, face - 0.04).scale.set(0.4, 1, 1); }
+  else if (style === 'wire') { spoke(18, R * 0.05, CM.chrome, 0.55); spoke(18, R * 0.05, CM.chrome, -0.55); ax(new THREE.TorusGeometry(R * 0.3, R * 0.05, 6, 20), CM.chrome, face - 0.02, 0, Math.PI / 2, 0); for (let i = 0; i < 2; i++) addMesh(g, rboxGeo(0.03, R * 0.7, R * 0.12, 0.01), CM.chrome, face + 0.03, 0, 0, i * Math.PI / 2 + Math.PI / 4, 0, 0); }
+  else if (style === 'aero') { ax(cylGeo(R * 0.95, R * 0.95, 0.03, 32), CM.alu, face - 0.03); ax(cylGeo(R * 0.7, R * 0.7, 0.035, 32), CM.gun, face - 0.025); for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; addMesh(g, rboxGeo(0.04, R * 0.42, R * 0.13, 0.02), CM.black, face - 0.01, Math.cos(a) * R * 0.74, Math.sin(a) * R * 0.74, a, 0, 0); } }
+  else if (style === 'center') { spoke(10, R * 0.13, CM.gun, 0.25); ax(cylGeo(R * 0.3, R * 0.3, 0.07, 6), CM.red, face + 0.01); }
   else if (style === 'beadlock') { ax(cylGeo(R * 0.95, R * 0.95, 0.03, 28), CM.gun, face - 0.03); for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2; addMesh(g, cylGeo(R * 0.16, R * 0.16, 0.04, 14), CM.black, face - 0.02, Math.cos(a) * R * 0.55, Math.sin(a) * R * 0.55, 0, 0, Math.PI / 2); } for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; addMesh(g, cylGeo(0.016, 0.016, 0.04, 6), CM.chrome, face, Math.cos(a) * R * 0.86, Math.sin(a) * R * 0.86, 0, 0, Math.PI / 2); } }
   // centre hub and wheel nuts
   ax(cylGeo(R * 0.22, R * 0.26, 0.05, 20), style === 'deep' ? CM.red : CM.chrome, face);
-  if (style !== 'deep') for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; addMesh(g, cylGeo(0.014, 0.014, 0.06, 6), CM.chrome, face + 0.01, Math.cos(a) * R * 0.15, Math.sin(a) * R * 0.15, 0, 0, Math.PI / 2); }
+  if (style !== 'deep' && style !== 'center' && style !== 'wire') for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; addMesh(g, cylGeo(0.014, 0.014, 0.06, 6), CM.chrome, face + 0.01, Math.cos(a) * R * 0.15, Math.sin(a) * R * 0.15, 0, 0, Math.PI / 2); }
   return g;
 }
 
@@ -222,7 +225,7 @@ function driver(parent, x, y, z, helmetMat){
 const BUILD = {};
 function buildCar(def, paint){
   const car = {def, root: new THREE.Group(), chassis: new THREE.Group(), wheels: [], springs: [], spin: [], flaps: [], shakers: [],
-    exh: [], sway: [], blink: [], siren: null, wing: null, drs: null, driverHead: null, shafts: [],
+    exh: [], sway: [], blink: [], keep: [], anim: [], siren: null, wing: null, drs: null, driverHead: null, shafts: [],
     susp: {p: 0, pv: 0, r: 0, rv: 0, h: 0, hv: 0}, freq: 9, damp: 0.35, t: Math.random() * 10, brakeHeat: 0};
   car.root.rotation.order = 'YXZ';
   car.root.add(car.chassis);
@@ -237,7 +240,7 @@ function buildCar(def, paint){
 
 // Fold every non-moving part into a few draw calls; moving parts stay separate.
 function batchCar(car){
-  const keep = new Set([...car.spin.map(p => p.o), ...car.flaps.map(f => f.o), ...car.sway.map(s => s.o), ...car.shakers.map(e => e.o),
+  const keep = new Set([...car.keep, ...car.spin.map(p => p.o), ...car.flaps.map(f => f.o), ...car.sway.map(s => s.o), ...car.shakers.map(e => e.o),
     car.drs, car.wing && car.wing.o, car.wing && car.wing.flap, car.driverHead, ...car.shafts,
     ...car.exh.map(e => e.flame.g), ...car.springs.map(s => s.g), ...car.wheels.flatMap(w => [w.k, w.spin, w.spin.parent])].filter(Boolean));
   for (const o of keep) if (o.children && o.children.length && !car.springs.some(s => s.g === o) && !car.exh.some(e => e.flame.g === o)) mergeStatic(o, keep);
@@ -297,7 +300,7 @@ function animateCar(car, s, dt){
   for (const e of car.exh) {
     const F = e.flame;
     let f = 0, blue = false;
-    if (isJet(car.def)) { f = 0.35 + s.throttle * 0.7 + (boost ? 0.7 : 0); blue = boost || car.def.engine === 'warp'; }
+    if (isJet(car.def)) { f = 0.35 + s.throttle * 0.7 + (boost ? 0.7 : 0); blue = boost || car.def.engine !== 'jet'; }
     else if (boost) { f = 0.9 + Math.random() * 0.3; blue = true; }
     else if (fl > 0) f = fl * (0.6 + Math.random() * 0.7);
     F.g.visible = f > 0.03;
@@ -327,5 +330,6 @@ function animateCar(car, s, dt){
     sw.vz += (-(sw.o.rotation.z - tz) * 60 - sw.vz * 3) * dt; sw.o.rotation.z += sw.vz * dt;
     if (s.bump) sw.vx += s.bump * 4;
   }
+  for (const f of car.anim) f(s, t, dt);
   if (car.driverHead) { car.driverHead.rotation.z = lerp(car.driverHead.rotation.z, clamp(-s.aLat * 0.01, -0.3, 0.3), dt * 6); car.driverHead.rotation.y = lerp(car.driverHead.rotation.y, s.steer * 0.35, dt * 5); }
 }

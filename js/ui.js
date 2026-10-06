@@ -44,8 +44,10 @@ function renderCareer(){
 
 function renderGarage(){
   const el = $('tab-garage'), v = carById(ui.view), owned = owns(v.id), unlocked = carUnlocked(v);
-  let h = '<div class="cars">';
-  CARS.filter(c => !c.creatorOnly || creator).forEach(c => {
+  // tier tabs keep the list short: only the viewed car's tier is shown
+  const list = ti => CARS.filter(c => c.tier === ti && (!c.creatorOnly || creator));
+  let h = '<div class="tiers gtiers">' + TIERS.map((t, i) => `<button class="tier ${v.tier === i ? 'on' : ''} ${tierOpen(i) ? '' : 'locked'}" data-gt="${i}" style="--tc:${t.color}"><span class="tl">${t.id}</span><span class="tn">${list(i).filter(c => owns(c.id)).length}/${list(i).length} cars</span></button>`).join('') + '</div><div class="cars">';
+  list(v.tier).forEach(c => {
     const o = owns(c.id), ul = carUnlocked(c);
     h += `<div class="car ${ui.view === c.id ? 'view' : ''} ${save.sel === c.id ? 'sel' : ''} ${!ul ? 'locked' : ''}" data-car="${c.id}">
       <div class="swatch" style="background:${hexStr(paintOf(c))}"></div><b>${c.name}</b>
@@ -64,7 +66,8 @@ function renderGarage(){
     ${bar('Handling', s.grip, mx.grip, 5.3, s.grip.toFixed(1))}
     ${bar('Nitro', s.nitroMax, 5, 5, s.nitroMax.toFixed(1) + 's')}
     ${bar('Toughness', s.crashKeep, 0.9, 0.9, Math.round(s.crashKeep * 100) + '%')}
-    <div class="stat"><span>Engine</span><small>${({flat4: 'Air-cooled flat-4', i4: 'Inline-4', v8: 'Supercharged V8', v8big: 'Blown big-block V8', turbo4: 'Turbo inline-4', v10: 'V10', i6: 'Straight-6', v12: 'V12', jet: 'Twin jet turbines', warp: 'Twin plasma thrusters'})[v.engine]} · ${v.gears === 1 ? 'direct drive' : v.gears + '-speed'} · ${(v.red / 1000).toFixed(1)}k redline</small></div>`;
+    <div class="stat"><span>Engine</span><small>${v.engName || ({flat4: 'Air-cooled flat-4', i4: 'Inline-4', v8: 'Supercharged V8', v8big: 'Blown big-block V8', turbo4: 'Turbo inline-4', v10: 'V10', i6: 'Straight-6', v12: 'V12', jet: 'Twin jet turbines', warp: 'Twin plasma thrusters',
+      diesel: 'Turbo-diesel straight-6', kart: '2-stroke single', rotary: 'Turbo twin-rotor', v8fp: 'Flat-plane V8', i8: 'Supercharged straight-8', v6t: 'Hybrid twin-turbo V6', ev: 'Twin electric motors', fuel: 'Blown nitro Hemi V8', hover: 'Twin hover fans'})[v.engine]} · ${v.hover ? 'no wheels' : v.gears === 1 ? 'direct drive' : v.gears + '-speed'} · ${(v.red / 1000).toFixed(1)}k ${v.engine === 'ev' ? 'max rpm' : 'redline'}</small></div>`;
   if (owned) {
     h += `<div class="sub">Paint</div><div class="paints">${[v.color, ...PAINTS.filter(p => p !== v.color)].map(p => `<button class="paint ${paintOf(v) === p ? 'on' : ''}" data-paint="${p}" style="background:${hexStr(p)}"></button>`).join('')}</div>`;
     h += `<div class="sub">Upgrades</div>`;
@@ -77,6 +80,7 @@ function renderGarage(){
   }
   h += '</div>';
   el.innerHTML = h;
+  el.querySelectorAll('[data-gt]').forEach(b => b.onclick = () => { const ti = +b.dataset.gt; if (ti === v.tier) return; const c = list(ti).find(c => c.id === save.sel) || list(ti)[0]; ui.view = c.id; renderMenu(); });
   el.querySelectorAll('[data-car]').forEach(d => d.onclick = () => { ui.view = d.dataset.car; if (owns(ui.view)) { save.sel = ui.view; persist(); } renderMenu(); });
   if ($('buy')) $('buy').onclick = () => { if (save.coins < v.price) return; save.coins -= v.price; save.owned.push(v.id); save.sel = v.id; persist(); SFX.init(); SFX.coin(); renderMenu(); };
   if ($('drive')) $('drive').onclick = () => { save.sel = v.id; persist(); renderMenu(); };
@@ -114,7 +118,7 @@ function updateShowroom(dt){
     if (show.car) turnTop.remove(show.car.root);
     show.car = buildCar(def, paint); turnTop.add(show.car.root);
     show.id = def.id; show.paint = paint; show.eng = makeEngineState(def); show.def = def;
-    show.dist = def.id === 'monster' ? 8.6 : 4.2 + def.l * 1.15;
+    show.dist = def.showD || 4.2 + def.l * 1.15;
   }
   const revKey = keys.KeyW || keys.ArrowUp;
   const thr = show.rev || revKey ? 1 : 0;
@@ -123,7 +127,7 @@ function updateShowroom(dt){
   if (show.voiced) { SFX.engine(def.engine, show.eng.rpm, thr, def.red, show.eng.boost); engineSFX(show, 1); }
   animateCar(show.car, {speed: 0, steer: Math.sin(gTime * 0.7) * 0.5, throttle: thr, brake: 0, rpm: show.eng.rpm, rpmN: show.eng.rpm / def.red, boost: false,
     aLong: 0, aLat: 0, air: false, bump: 0, backfire: show.eng.backfire}, dt);
-  const ty = def.id === 'monster' ? 1.3 : 0.6, c = turntable.position;
+  const ty = def.showY || 0.6, c = turntable.position;
   camera.position.set(c.x + Math.sin(show.az) * Math.cos(show.el) * show.dist, c.y + ty + Math.sin(show.el) * show.dist, c.z + Math.cos(show.az) * Math.cos(show.el) * show.dist);
   camera.lookAt(c.x, c.y + ty, c.z);
   aimSun(c.x, c.z, 9);
