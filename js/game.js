@@ -71,7 +71,10 @@ function drivePlayer(p, dt, ctl, t){
   const top = st.top * (p.boost ? 1.4 : 1), v0 = p.speed;
   const g0 = t ? groundAt(t, p.fidx, p.lat) : 0, grounded = p.y <= g0 + 0.06, tr = grounded ? 1 : 0.15;
   const shiftCut = p.eng.shiftT > 0 ? 0.3 : 1; // the car really pauses for each gear change
-  if (up) { if (p.speed < top) p.speed = Math.min(top, p.speed + st.accel * (p.boost ? 1.7 : 1) * (p.speed < 0 ? 2.5 : shiftCut) * tr * dt); }
+  // traction: up to +75% pull from a standstill, fading out by two-thirds of top speed
+  const launch = 1 + (st.traction - 1) * clamp(1 - Math.abs(p.speed) / (st.top * 0.65), 0, 1);
+  p.tc = up && grounded && launch > 1.02;
+  if (up) { if (p.speed < top) p.speed = Math.min(top, p.speed + st.accel * launch * (p.boost ? 1.7 : 1) * (p.speed < 0 ? 2.5 : shiftCut) * tr * dt); }
   else if (dn) p.speed -= (p.speed > 0 ? st.accel * 1.8 : st.accel * 0.6) * tr * dt;
   else p.speed -= Math.sign(p.speed) * Math.min(Math.abs(p.speed), 7 * dt);
   if (p.speed > top) p.speed = Math.max(top, p.speed - 14 * dt);
@@ -88,8 +91,8 @@ function drivePlayer(p, dt, ctl, t){
   p.head += p.yawRate * dt;
   p.side += p.steer * p.speed * (hb ? 0.9 : 0.22) * dt;
   p.side *= Math.exp(-st.grip * (hb ? 0.5 : 2.6) * dt);
-  if (hb) p.speed *= Math.exp(-0.7 * dt);
-  p.slip = clamp(Math.abs(p.side) / 5 + (hb && av > 6 ? 0.5 : 0) + (up && av < 6 && p.def.accel > 20 ? 0.4 : 0), 0, 1.5);
+  if (hb) p.speed *= Math.exp(-0.7 * (1 - 0.08 * st.tracLv) * dt);
+  p.slip = clamp(Math.abs(p.side) / 5 + (hb && av > 6 ? 0.5 : 0) + (up && av < 6 && p.def.accel > 20 ? 0.4 * (1 - st.tracLv / 6) : 0), 0, 1.5);
   // move, collide with furniture
   const fx = Math.sin(p.head), fz = Math.cos(p.head);
   let vx = fx * p.speed - fz * p.side, vz = fz * p.speed + fx * p.side;
@@ -139,7 +142,7 @@ function drivePlayer(p, dt, ctl, t){
   if (p.y <= gnd || (p.y < gnd + 0.12 && p.vy <= ev + 0.5)) {
     if (p.vy < ev - 5) { p.bump = Math.min(2.5, (ev - p.vy) * 0.12); SFX.land(); camShake = Math.max(camShake, 0.15); }
     p.vy = ev; p.y = gnd;
-    p.speed -= 20 * slope * dt;        // uphill slows you, downhill pulls you along
+    p.speed -= 20 * slope * dt * (slope > 0 ? 1 - 0.07 * st.tracLv : 1);   // uphill slows you (less with traction), downhill pulls you along
   }
   p.air = p.y > gnd + 0.08;
   p.pitchSlope = p.air ? 0 : slope;
@@ -496,6 +499,7 @@ function drawTacho(p){
   g.fillText(p.def.engine === 'warp' ? 'W' : p.def.engine === 'jet' ? 'J' : p.def.gears === 1 ? 'D' : (p.speed < -0.5 ? 'R' : e.gear), cx, cy + 4);
   g.font = 'bold 26px "Baloo 2", sans-serif'; g.fillText(Math.round(Math.abs(p.speed) * kmhOf(p.def)).toLocaleString(), cx, cy + 46);
   g.font = '600 12px "Baloo 2", sans-serif'; g.fillStyle = '#fffa'; g.fillText('KM/H', cx, cy + 66); g.fillText('×1000 RPM', cx, cy + 82);
+  if (p.st.tracLv > 0) { g.font = 'bold 13px "Baloo 2", sans-serif'; g.fillStyle = p.tc ? '#4cd37a' : '#ffffff30'; g.fillText('TC', cx + 54, cy + 6); }
   if (hasTurbo(p.def)) { g.fillStyle = '#29d3ff'; g.fillRect(cx - 30, cy + 92, 60 * e.boost, 5); }
 }
 

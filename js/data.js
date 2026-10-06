@@ -75,6 +75,7 @@ const PARTS = [
   {id:'tires',  name:'Tyres',   desc:'Grip & turning',       icon:'🛞'},
   {id:'nitro',  name:'Nitro',   desc:'Boost size & refill',  icon:'🔥'},
   {id:'bumper', name:'Bumper',  desc:'Keep speed in crashes',icon:'🛡️'},
+  {id:'traction',name:'Traction',desc:'Launch, hills & drifts',icon:'🧲'},
 ];
 const MAXLV = 5;
 const PAINTS = [0xd62839,0xff8c42,0xffd166,0x06d6a0,0x2a9d8f,0x3a86ff,0x1d3557,0x9b5de5,0xf7c6d9,0xf4f1ea,0xc9ccd1,0x222831];
@@ -177,9 +178,12 @@ function stats(c){
     nitroMax:   2 + 0.6 * L('nitro'),
     nitroRegen: 0.25 + 0.08 * L('nitro'),
     crashKeep:  Math.max(0.2, Math.min(0.9, 0.3 + 0.1 * L('bumper') + (c.mass - 1) * 0.25)),
+    // traction: extra pull off the line, less speed lost climbing and sliding, less wheelspin
+    traction:   1 + 0.15 * L('traction'),
+    tracLv:     L('traction'),
   };
 }
-const PR = s => Math.round(s.top * 2 + s.accel + s.grip * 15);
+const PR = s => Math.round(s.top * 2 + s.accel + s.grip * 15 + (s.traction - 1) * 30);
 const upCost = (c, lv) => Math.round((30 + c.price * 0.06) * Math.pow(1.5, lv) / 5) * 5;
 const lapsFor = t => t.laps;
 const tierRes = ti => save.res[TIERS[ti].id] || {};
